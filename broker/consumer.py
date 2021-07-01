@@ -1,8 +1,11 @@
 import json
-from common.database import db_session
+from common.database import init_db
+init_db()
+
 from models.models import Post, PostFeed, User, Follow, Block
 
 
+from common.database import db_session
 class UserConsumer:
     def __init__(self, channel):
         self.exchange_name = 'user'
@@ -70,10 +73,14 @@ class PostConsumer:
                 PostFeed.query.filter(PostFeed.p_id == data['id']).delete()
                 db_session.commit()
             elif properties.content_type == 'post.published':
-                # TODO - in later commits
-                pass
-        except Exception:
+                following = list(map(lambda follower: follower.id, Follow.query.filter(Follow.dst == data['user_id']).all()))
+                self_id = [data['user_id']]
+                for subscriber_id in [*following, *self_id]:
+                    db_session.add(PostFeed(u_id = subscriber_id, p_id = data['id']))
+                db_session.commit()
+        except Exception as e:
             # don't crash
+            print(e)
             pass
         
 
