@@ -1,0 +1,76 @@
+version: '3'
+networks:
+  apigateway_the_network:
+    external: true
+services:
+  newsfeed_backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sh -c "sleep 10 && python main.py"
+    ports:
+      - 8087:5000
+    volumes:
+      - .:/app
+    depends_on:
+      - newsfeed_queue
+    environment:
+      FLASK_ENV: development
+      FLASK_RUN_HOST: 0.0.0.0
+ 
+      DB_TYPE: postgresql
+      DB_DRIVER: psycopg2
+      DB_USER: test
+      DB_PASSWORD: test
+      DB_HOST: newsfeed_db
+      DB_NAME: main
+ 
+      TEST_DATABASE_URI: sqlite:///database.db
+      DEV_DATABASE_URI: postgresql+psycopg2://test:test@newsfeed_db/main
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://test:test@newsfeed_db/main
+      
+      RABBITMQ_URI: amqps://qilglokd:nlmVctERVcA7th3VCE1-UL_uij-BCXyj@roedeer.rmq.cloudamqp.com/qilglokd
+ 
+      KEY: ${KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      JWT_SECRET: ${JWT_SECRET}
+    hostname: newsfeedservice
+    networks:
+      - apigateway_the_network
+ 
+  newsfeed_queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sh -c "sleep 7 && python -u consume.py"
+    depends_on:
+      - newsfeed_db
+    environment:
+      TEST_DATABASE_URI: sqlite:///database.db
+      DEV_DATABASE_URI: postgresql+psycopg2://test:test@newsfeed_db/main
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://test:test@newsfeed_db/main
+      RABBITMQ_URI: amqps://qilglokd:nlmVctERVcA7th3VCE1-UL_uij-BCXyj@roedeer.rmq.cloudamqp.com/qilglokd
+
+      DB_TYPE: postgresql
+      DB_DRIVER: psycopg2
+      DB_USER: test
+      DB_PASSWORD: test
+      DB_HOST: newsfeed_db
+      DB_NAME: main
+    networks:
+      - apigateway_the_network
+ 
+  newsfeed_db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: main
+    volumes:
+      - .dbdata:/var/lib/postgresql
+    ports:
+      - 54326:5432
+    networks:
+      - apigateway_the_network
