@@ -44,7 +44,8 @@ class UserConsumer:
                 follow = Follow.query.get(data['id'])
                 follow.mute = data['mute']
                 db_session.commit()
-        except:
+        except Exception:
+            # don't crash
             pass
 
 
@@ -71,7 +72,8 @@ class PostConsumer:
             elif properties.content_type == 'post.published':
                 # TODO - in later commits
                 pass
-        except:
+        except Exception:
+            # don't crash
             pass
         
 
