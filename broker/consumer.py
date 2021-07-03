@@ -73,7 +73,7 @@ class PostConsumer:
                 PostFeed.query.filter(PostFeed.p_id == data['id']).delete()
                 db_session.commit()
             elif properties.content_type == 'post.published':
-                following = list(map(lambda follower: follower.id, Follow.query.filter(Follow.dst == data['user_id']).all()))
+                following = list(map(lambda follower: follower.src, Follow.query.filter(Follow.dst == data['user_id']).all()))
                 self_id = [data['user_id']]
                 for subscriber_id in [*following, *self_id]:
                     db_session.add(PostFeed(u_id = subscriber_id, p_id = data['id']))
