@@ -1,7 +1,7 @@
 from models.models import PostFeed
 from repository import newsfeed_repository
 
-def get_for_user(user: dict):
+def get_for_user(user: dict, page: int, per_page: int):
     pf = newsfeed_repository.get_for_user(user['id'])
-    pfd = [i.get_dict() for i in pf]
+    pfd = [i.get_dict() for i in pf][(page-1)*per_page : page*per_page]
     return pfd
