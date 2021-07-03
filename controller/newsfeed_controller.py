@@ -15,5 +15,8 @@ class NewsfeedResource(Resource):
         except Exception as e:
             return (e.message if hasattr(e, 'message') else str(e),403)
 
-        return newsfeed_service.get_for_user(payload), 200
+        page = int(request.args.get('page')) if request.args.get('page') else 1
+        per_page = int(request.args.get('per_page')) if request.args.get('per_page') else 10
+
+        return newsfeed_service.get_for_user(payload, page, per_page), 200
         
