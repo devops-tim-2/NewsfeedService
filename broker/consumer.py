@@ -1,8 +1,8 @@
 import json
 from common.database import init_db
 init_db()
-
-from models.models import Post, PostFeed, User, Follow, Block
+from sqlalchemy import and_
+from models.models import Post, PostFeed, User, Follow, Block, CampaignFeed, Campaign
 
 
 from common.database import db_session
@@ -82,6 +82,37 @@ class PostConsumer:
             # don't crash
             print(e)
             pass
-        
+
+class CampaignConsumer:
+    def __init__(self, channel):
+        self.exchange_name = 'campaign'
+        self.channel = channel
+        channel.exchange_declare(exchange=self.exchange_name, exchange_type='fanout')
+        q = channel.queue_declare(queue='')
+        channel.queue_bind(exchange=self.exchange_name, queue=q.method.queue)
+        channel.basic_consume(queue=q.method.queue, on_message_callback=self.on_message, auto_ack=True)
+
+    def on_message(self, ch, method, properties, body):
+        data = json.loads(body)
+        try:
+            if properties.content_type == 'campaign.created':            
+                campaign = Campaign(id=data['id'], age_min=data['age_min'], age_max=data['age_max'], interests=data['interests'], regions=data['regions'], sex=data['sex'])
+                db_session.add(campaign)
+                db_session.commit()
+            elif properties.content_type == 'campaign.deleted':
+                Campaign.query.get(data['id']).delete()
+                CampaignFeed.query.filter(CampaignFeed.c_id == data['id']).delete()
+                db_session.commit()
+            elif properties.content_type == 'campaign.published':
+                datax = Campaign.query.get(data['campaign_id']).get_dict()
+                interest_groups = list(map(lambda interesent: interesent.id, User.query.filter(and_(datax['interests'] == User.interests, User.region == datax['regions'], User.age <= datax['age_max'], User.age >= datax['age_min']))))
+                print(len(interest_groups))
+                for subscriber_id in interest_groups:
+                    db_session.add(CampaignFeed(u_id = subscriber_id, c_id = datax['id']))
+                db_session.commit()
+        except Exception as e:
+            # don't crash
+            print(e)
+            pass
 
 
