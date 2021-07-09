@@ -30,8 +30,9 @@ def setup_config(cfg_name: str):
 
     
     # This import must be postponed after init_db has been called
-    from controller.newsfeed_controller import NewsfeedResource
+    from controller.newsfeed_controller import NewsfeedResource, CampaignsResource
     api.add_resource(NewsfeedResource, '/api')
+    api.add_resource(CampaignsResource, '/api/campaigns')
     # api.add_resource(PostListResource, '/api')
     # api.add_resource(ProfileResource, '/api/profile/<user_id>')
     # api.add_resource(LikeResource, '/api/like/<post_id>')
